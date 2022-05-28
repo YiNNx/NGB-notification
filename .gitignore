@@ -1,0 +1,5 @@
+/env/config/dev.yml
+/env/config/test.yml
+/src/go.sum
+.idea/
+/log/

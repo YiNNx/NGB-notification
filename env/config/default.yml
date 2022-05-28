@@ -1,0 +1,39 @@
+app:
+  addr: ":8080"
+
+postgresql:
+  user: "postgres"
+  password: "password"
+  dbname: "ngb_beta"
+  host: ""
+  port: "5432"
+
+redis:
+  host: ""
+  port: "6379"
+
+jwt:
+  secret: ""
+
+log:
+  path: ""
+  file: ""
+
+mail:
+  host : ""
+  addr : "smtp.example.com:587"
+  username : "233@example.com"
+  password : ""
+  goroutine: 10
+
+elasticsearch:
+  index: "ngb_post"
+
+rabbitmq:
+  host: ""
+  port: "5672"
+  user: "user"
+  password: "password"
+  exchange_name: "ngb_direct"
+  routing_key: "websocket"
+

@@ -1,7 +1,6 @@
 package model
 
 import (
-	"errors"
 	"github.com/go-pg/pg/v10"
 	"ngb-noti/config"
 	"ngb-noti/util/log"
@@ -78,35 +77,4 @@ func (trans *Transaction) Close() {
 func Insert(m interface{}) error {
 	_, err := tx.Model(m).Insert()
 	return err
-}
-
-// CheckPK , when doesn't exist return false
-func CheckPK(m interface{}) (err error) {
-	res, err := tx.Model(m).WherePK().Exists()
-	if err != nil {
-		return err
-	}
-	if res == false {
-		return errors.New("PK doesn't exist")
-	}
-	return nil
-}
-
-func GetByPK(m interface{}) error {
-	err := tx.Model(m).WherePK().Select()
-	return err
-}
-
-func GetAll(m interface{}) error {
-	//m *[]model.Xx
-	err := tx.Model(m).Select()
-	return err
-}
-
-func Delete(m interface{}) error {
-	_, err := tx.Model(m).WherePK().Delete()
-	if err != nil {
-		return err
-	}
-	return nil
 }

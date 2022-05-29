@@ -4,13 +4,6 @@ import (
 	"time"
 )
 
-const (
-	TypeMessage   = 1
-	TypeComment   = 2
-	TypeMentioned = 3
-	TypeNewPost   = 4
-)
-
 type Notification struct {
 	tableName struct{}
 

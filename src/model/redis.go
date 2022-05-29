@@ -46,8 +46,16 @@ func RedisPush(key string, list []string) error {
 	return nil
 }
 
-func RedisGet(key string) (value interface{}, err error) {
+func RedisPull(key string) ([]string, error) {
+	list, err := redisClient.LRange("fail-list", 0, -1).Result()
+	if err != nil {
+		log.Logger.Error(err)
+		return nil, err
+	}
+	return list, nil
+}
 
+func RedisGet(key string) (value interface{}, err error) {
 	value, err = redisClient.Get(key).Result()
 	if err == redis.Nil {
 		return nil, nil

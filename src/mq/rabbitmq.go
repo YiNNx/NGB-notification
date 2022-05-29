@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"ngb-noti/config"
+	"ngb-noti/util"
 	"ngb-noti/util/log"
 	"time"
 )
@@ -16,15 +17,23 @@ type Notification struct {
 	Status    int
 }
 
-var mqURL = "amqp://" + config.C.Rabbitmq.User + ":" + config.C.Rabbitmq.Password + "@" + config.C.Rabbitmq.Host + ":" + config.C.Rabbitmq.Port + "/"
+var mqURL = "amqp://" +
+	config.C.Rabbitmq.User + ":" +
+	config.C.Rabbitmq.Password + "@" +
+	config.C.Rabbitmq.Host + ":" +
+	config.C.Rabbitmq.Port + "/"
 
 func ReceiveFromQueue() {
 	conn, err := amqp.Dial(mqURL)
-	log.Logger.Error(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		log.Logger.Error(err)
+	}
 	defer conn.Close()
 
 	ch, err := conn.Channel()
-	log.Logger.Error(err, "Failed to open a channel")
+	if err != nil {
+		log.Logger.Error(err)
+	}
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
@@ -36,53 +45,116 @@ func ReceiveFromQueue() {
 		false,                          // no-wait
 		nil,                            // arguments
 	)
-	log.Logger.Error(err, "Failed to declare an exchange")
+	if err != nil {
+		log.Logger.Error(err)
+	}
 
-	q, err := ch.QueueDeclare(
-		"",    // name
+	WsQueue, err := ch.QueueDeclare(
+		"ws",  // name
 		false, // durable
 		false, // delete when usused
 		true,  // exclusive
 		false, // no-wait
 		nil,   // arguments
 	)
-	log.Logger.Error(err, "Failed to declare a queue")
-
-	err = ch.QueueBind(
-		q.Name,                         // queue name
-		config.C.Rabbitmq.RoutingKey,   // routing key
-		config.C.Rabbitmq.ExchangeName, // exchange
-		false,
-		nil)
-	log.Logger.Error(err, "Failed to bind a queue")
-
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		true,   // auto ack
-		false,  // exclusive
-		false,  // no local
-		false,  // no wait
-		nil,    // args
+	if err != nil {
+		log.Logger.Error(err)
+	}
+	for i, _ := range config.C.Rabbitmq.WsRoutingKey {
+		err = ch.QueueBind(
+			WsQueue.Name,                      // queue name
+			config.C.Rabbitmq.WsRoutingKey[i], // routing key
+			config.C.Rabbitmq.ExchangeName,    // exchange
+			false,
+			nil)
+		if err != nil {
+			log.Logger.Error(err)
+		}
+	}
+	wsDelivery, err := ch.Consume(
+		WsQueue.Name, // queue
+		"",           // consumer
+		true,         // auto ack
+		false,        // exclusive
+		false,        // no local
+		false,        // no wait
+		nil,          // args
 	)
-	log.Logger.Error(err, "Failed to register a consumer")
+	if err != nil {
+		log.Logger.Error(err)
+	}
 
-	forever := make(chan bool)
+	EmailQueue, err := ch.QueueDeclare(
+		"email", // name
+		false,   // durable
+		false,   // delete when usused
+		true,    // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	if err != nil {
+		log.Logger.Error(err)
+	}
+	for i, _ := range config.C.Rabbitmq.EmailRoutingKey {
+		err = ch.QueueBind(
+			EmailQueue.Name,                      // queue name
+			config.C.Rabbitmq.EmailRoutingKey[i], // routing key
+			config.C.Rabbitmq.ExchangeName,       // exchange
+			false,
+			nil)
+		if err != nil {
+			log.Logger.Error(err)
+		}
+	}
+	emailDelivery, err := ch.Consume(
+		EmailQueue.Name, // queue
+		"",              // consumer
+		true,            // auto ack
+		false,           // exclusive
+		false,           // no local
+		false,           // no wait
+		nil,             // args
+	)
+	if err != nil {
+		log.Logger.Error(err)
+	}
 
-	go receive(msgs)
-
-	log.Logger.Info(" Waiting for logs")
-	<-forever
+	wait := make(chan bool)
+	go receiveToWs(wsDelivery)
+	go receiveToEmail(emailDelivery)
+	<-wait
 }
 
-func receive(msgs <-chan amqp.Delivery) {
+func receiveToWs(msgs <-chan amqp.Delivery) {
 	for d := range msgs {
-		log.Logger.Printf(" [x] %s", d.Body)
+		log.Logger.Printf(" receiveNoTi: %s", d.Body)
 
 		n := &Notification{}
 		err := json.Unmarshal(d.Body, n)
 		if err != nil {
 			log.Logger.Error(err)
 		}
+
+		PgChan <- n
+
+		client := util.ConnectClient(n.Uid)
+		if client == nil {
+			RedisChan <- n
+		} else {
+			client.Send <- n
+		}
+	}
+}
+
+func receiveToEmail(msgs <-chan amqp.Delivery) {
+	for d := range msgs {
+		log.Logger.Printf(" receiveNoTi: %s", d.Body)
+
+		n := &Notification{}
+		err := json.Unmarshal(d.Body, n)
+		if err != nil {
+			log.Logger.Error(err)
+		}
+		//util.EmailPool()
 	}
 }

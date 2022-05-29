@@ -5,7 +5,9 @@ import (
 )
 
 var pool *email.Pool
+var hub = newHub()
 
 func init() {
+	go hub.run()
 	initEmail()
 }

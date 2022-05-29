@@ -63,12 +63,13 @@ type elasticsearch struct {
 }
 
 type rabbitmq struct {
-	Host         string `yaml:"host"`
-	Port         string `yaml:"port"`
-	User         string `yaml:"user"`
-	Password     string `yaml:"password"`
-	ExchangeName string `yaml:"exchange_name"`
-	RoutingKey   string `yaml:"routing_key"`
+	Host            string   `yaml:"host"`
+	Port            string   `yaml:"port"`
+	User            string   `yaml:"user"`
+	Password        string   `yaml:"password"`
+	ExchangeName    string   `yaml:"exchange_name"`
+	WsRoutingKey    []string `yaml:"ws_routing_key"`
+	EmailRoutingKey []string `yaml:"email_routing_key"`
 }
 
 func init() {

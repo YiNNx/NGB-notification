@@ -1,7 +1,7 @@
 package util
 
 import (
-	"gitemailHub.com/jordan-wright/email"
+	"github.com/jordan-wright/email"
 	"net/smtp"
 	"net/textproto"
 	"ngb-noti/config"

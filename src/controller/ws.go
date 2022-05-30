@@ -1,48 +1,23 @@
 package controller
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"ngb-noti/config"
 	"ngb-noti/model"
-	"ngb-noti/mq"
 	"ngb-noti/util"
 	"ngb-noti/util/log"
 	"strconv"
-	"strings"
 )
 
-var addr = config.C.App.Addr
+func ConnectWs(w http.ResponseWriter, r *http.Request) {
+	uid := r.Context().Value("jwt").(contextValue)["claims"].(*util.JwtUserClaims).Id
+	c := r.Context().Value("ws").(contextValue)["ws_connection"].(*websocket.Conn)
+	client := util.GetClient(uid, c)
 
-var upgrader = websocket.Upgrader{} // use default options
-
-func NotificationWs(w http.ResponseWriter, r *http.Request) {
-	log.Logger.Info(strings.Trim(r.Header["Authorization"][0], "Bearer "))
-	claims, err := util.ParseToken(strings.Trim(r.Header["Authorization"][0], "Bearer "))
-	if err != nil || claims == nil {
-		fmt.Fprintf(w, err.Error())
-		return
-	}
-
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Logger.Error("upgrade:", err)
-		return
-	}
-	defer c.Close()
-
-	user := claims.Id
-	client := util.GetClient(user, c)
-
-	offlineNoti, err := model.RedisPull("notification_" + strconv.Itoa(user))
-	if err != nil {
-		log.Logger.Error("upgrade:", err)
-		return
-	}
-	if offlineNoti != nil {
-		client.WriteOfflineNotification(offlineNoti)
+	offlineN := PullOfflineNotification(uid)
+	if offlineN != nil {
+		client.WriteOfflineNotification(offlineN)
 	}
 
 	wait := make(chan bool)
@@ -50,37 +25,21 @@ func NotificationWs(w http.ResponseWriter, r *http.Request) {
 	<-wait
 }
 
-func HandlePostgres() {
-	tx := model.BeginTx()
-	defer tx.Close()
-	for {
-		n := <-mq.PgChan
-		notification := &model.Notification{
-			Time:      n.Time,
-			Uid:       n.Uid,
-			Type:      n.Type,
-			ContentId: n.ContentId,
-			Status:    n.Status,
-		}
-		if err := model.Insert(notification); err != nil {
-			tx.Rollback()
-			log.Logger.Error(err)
-		}
+func PullOfflineNotification(uid int) []string {
+	key := "notification_" + strconv.Itoa(uid)
+	offlineNotification, err := model.RedisLRange(key)
+	if err != nil {
+		log.Logger.Error(err)
+		return nil
 	}
-}
-
-func HandleRedis() {
-	for {
-		n := <-mq.RedisChan
-		data, _ := json.Marshal(n)
-		list := []string{string(data)}
-		if err := model.RedisPush("notification_"+strconv.Itoa(n.Uid), list); err != nil {
-			log.Logger.Error(err)
-		}
+	if err := model.RedisDelete(key); err != nil {
+		log.Logger.Error(err)
+		return nil
 	}
+	return offlineNotification
 }
 
 func StartWebSocket() {
-	http.HandleFunc("/notification", NotificationWs)
+	http.Handle("/notification", WsMiddleware(JwtMiddleware(http.HandlerFunc(ConnectWs))))
 	log.Logger.Fatal(http.ListenAndServe(config.C.App.Addr, nil))
 }

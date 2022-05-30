@@ -2,8 +2,8 @@ package util
 
 import (
 	"github.com/gorilla/websocket"
+	"time"
 
-	"ngb-noti/mq"
 	"ngb-noti/util/log"
 )
 
@@ -12,7 +12,7 @@ type Hub struct {
 	clients map[int]*Client
 
 	// Inbound notifications from the clients.
-	broadcast chan *mq.Notification
+	broadcast chan *Notification
 
 	// Register requests from the clients.
 	register chan *Client
@@ -23,7 +23,7 @@ type Hub struct {
 
 func newHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan *mq.Notification, 100),
+		broadcast:  make(chan *Notification, 100),
 		register:   make(chan *Client, 100),
 		unregister: make(chan *Client, 100),
 		clients:    map[int]*Client{},
@@ -61,7 +61,7 @@ type Client struct {
 	// The websocket connection.
 	conn *websocket.Conn
 	user int
-	Send chan *mq.Notification
+	Send chan *Notification
 }
 
 func (c *Client) WriteNotification() {
@@ -96,16 +96,15 @@ func GetClient(user int, ws *websocket.Conn) *Client {
 	client := &Client{
 		conn: ws,
 		user: user,
-		Send: make(chan *mq.Notification, 100),
+		Send: make(chan *Notification, 100),
 	}
 	hub.register <- client
 	return client
 }
 
 func (c *Client) WriteOfflineNotification(offlineNoti []string) {
-	defer c.conn.Close()
 	for i := range offlineNoti {
-		err := c.conn.WriteJSON(offlineNoti[i])
+		err := c.conn.WriteMessage(websocket.TextMessage, []byte(offlineNoti[i]))
 		if err != nil {
 			log.Logger.Error(err)
 		}
@@ -118,4 +117,12 @@ func ConnectClient(user int) *Client {
 		return res
 	}
 	return nil
+}
+
+type Notification struct {
+	Time      time.Time
+	Uid       int
+	Type      int
+	ContentId int
+	Status    int
 }

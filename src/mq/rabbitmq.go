@@ -6,16 +6,7 @@ import (
 	"ngb-noti/config"
 	"ngb-noti/util"
 	"ngb-noti/util/log"
-	"time"
 )
-
-type Notification struct {
-	Time      time.Time
-	Uid       int
-	Type      int
-	ContentId int
-	Status    int
-}
 
 var mqURL = "amqp://" +
 	config.C.Rabbitmq.User + ":" +
@@ -48,6 +39,7 @@ func ReceiveFromQueue() {
 	if err != nil {
 		log.Logger.Error(err)
 	}
+	log.Logger.Info("rabbitmq connected")
 
 	WsQueue, err := ch.QueueDeclare(
 		"ws",  // name
@@ -122,6 +114,7 @@ func ReceiveFromQueue() {
 	wait := make(chan bool)
 	go receiveToWs(wsDelivery)
 	go receiveToEmail(emailDelivery)
+	log.Logger.Info("start to receive message")
 	<-wait
 }
 
@@ -129,7 +122,7 @@ func receiveToWs(msgs <-chan amqp.Delivery) {
 	for d := range msgs {
 		log.Logger.Printf(" receiveNoTi: %s", d.Body)
 
-		n := &Notification{}
+		n := &util.Notification{}
 		err := json.Unmarshal(d.Body, n)
 		if err != nil {
 			log.Logger.Error(err)
@@ -150,7 +143,7 @@ func receiveToEmail(msgs <-chan amqp.Delivery) {
 	for d := range msgs {
 		log.Logger.Printf(" receiveNoTi: %s", d.Body)
 
-		n := &Notification{}
+		n := &util.Notification{}
 		err := json.Unmarshal(d.Body, n)
 		if err != nil {
 			log.Logger.Error(err)

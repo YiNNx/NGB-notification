@@ -46,8 +46,8 @@ func RedisPush(key string, list []string) error {
 	return nil
 }
 
-func RedisPull(key string) ([]string, error) {
-	list, err := redisClient.LRange("fail-list", 0, -1).Result()
+func RedisLRange(key string) ([]string, error) {
+	list, err := redisClient.LRange(key, 0, -1).Result()
 	if err != nil {
 		log.Logger.Error(err)
 		return nil, err

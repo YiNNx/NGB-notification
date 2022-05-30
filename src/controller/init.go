@@ -1,6 +1,6 @@
 package controller
 
-func init() {
+func InitHandle() {
 	go HandlePostgres()
 	go HandleRedis()
 }

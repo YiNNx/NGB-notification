@@ -2,10 +2,18 @@ package util
 
 import (
 	"github.com/gorilla/websocket"
-	"time"
-
 	"ngb-noti/util/log"
+	"time"
 )
+
+type Notification struct {
+	Time      time.Time
+	Uid       int
+	Email     string
+	Type      int
+	ContentId int
+	Status    int
+}
 
 type Hub struct {
 	// Registered clients.
@@ -64,7 +72,7 @@ type Client struct {
 	Send chan *Notification
 }
 
-func (c *Client) WriteNotification() {
+func (c *Client) ReceiveNotification() {
 	defer func() {
 		c.conn.Close()
 	}()
@@ -118,12 +126,4 @@ func ConnectClient(user int) *Client {
 		return res
 	}
 	return nil
-}
-
-type Notification struct {
-	Time      time.Time
-	Uid       int
-	Type      int
-	ContentId int
-	Status    int
 }

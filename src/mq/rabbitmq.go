@@ -120,8 +120,6 @@ func ReceiveFromQueue() {
 
 func receiveToWs(msgs <-chan amqp.Delivery) {
 	for d := range msgs {
-		log.Logger.Printf(" receiveNoTi: %s", d.Body)
-
 		n := &util.Notification{}
 		err := json.Unmarshal(d.Body, n)
 		if err != nil {
@@ -141,13 +139,14 @@ func receiveToWs(msgs <-chan amqp.Delivery) {
 
 func receiveToEmail(msgs <-chan amqp.Delivery) {
 	for d := range msgs {
-		log.Logger.Printf(" receiveNoTi: %s", d.Body)
-
 		n := &util.Notification{}
 		err := json.Unmarshal(d.Body, n)
 		if err != nil {
 			log.Logger.Error(err)
 		}
-		//util.EmailPool()
+		err = util.SendEmail(n.Email, "", config.C.Mail.Template)
+		if err != nil {
+			log.Logger.Error(err)
+		}
 	}
 }

@@ -10,6 +10,6 @@ func main() {
 	model.Connect()
 	defer model.Close()
 
-	controller.InitHandle()
+	controller.ListenAndSave()
 	controller.StartWebSocket()
 }

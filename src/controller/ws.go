@@ -10,6 +10,11 @@ import (
 	"strconv"
 )
 
+func StartWebSocket() {
+	http.Handle("/notification", WsMiddleware(JwtMiddleware(http.HandlerFunc(ConnectWs))))
+	log.Logger.Fatal(http.ListenAndServe(config.C.Ws.Addr, nil))
+}
+
 func ConnectWs(w http.ResponseWriter, r *http.Request) {
 	uid := r.Context().Value("jwt").(contextValue)["claims"].(*util.JwtUserClaims).Id
 	c := r.Context().Value("ws").(contextValue)["ws_connection"].(*websocket.Conn)
@@ -26,7 +31,7 @@ func ConnectWs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wait := make(chan bool)
-	go client.WriteNotification()
+	go client.ReceiveNotification()
 	<-wait
 }
 
@@ -44,9 +49,4 @@ func PullOfflineNotification(uid int) ([]string, error) {
 		return nil, err
 	}
 	return offlineNotification, nil
-}
-
-func StartWebSocket() {
-	http.Handle("/notification", WsMiddleware(JwtMiddleware(http.HandlerFunc(ConnectWs))))
-	log.Logger.Fatal(http.ListenAndServe(config.C.App.Addr, nil))
 }

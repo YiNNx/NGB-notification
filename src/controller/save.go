@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func HandlePostgres() {
+func savePg() {
 	for {
 		n := <-mq.PgChan
 		notification := &model.Notification{
@@ -24,7 +24,7 @@ func HandlePostgres() {
 	}
 }
 
-func HandleRedis() {
+func saveRedis() {
 	for {
 		n := <-mq.RedisChan
 		data, _ := json.Marshal(n)

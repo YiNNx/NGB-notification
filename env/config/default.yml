@@ -1,39 +1,42 @@
-app:
-  addr: ":8080"
-
-postgresql:
-  user: "postgres"
-  password: "password"
-  dbname: "ngb_beta"
-  host: ""
-  port: "5432"
-
-redis:
-  host: ""
-  port: "6379"
-
-jwt:
-  secret: ""
-
-log:
-  path: ""
-  file: ""
-
-mail:
-  host : ""
-  addr : "smtp.example.com:587"
-  username : "233@example.com"
-  password : ""
-  goroutine: 10
-
-elasticsearch:
-  index: "ngb_post"
+ws:
+  addr: ":8081"
 
 rabbitmq:
   host: ""
   port: "5672"
   user: "user"
-  password: "password"
+  password: "passwd"
   exchange_name: "ngb_direct"
-  routing_key: "websocket"
+  ws_routing_key:
+    - "mentioned"
+    - "comment"
+    - "message"
+    - "new_post"
+  email_routing_key:
+    - "none"
 
+jwt:
+  secret: ""
+
+postgresql:
+  user: "user"
+  password: "passwd"
+  dbname: "ngb_beta"
+  host: ""
+  port: "5432"
+
+mail:
+  host : "smtp.example.com"
+  addr : "smtp.example.com:587"
+  username : "xxxx@example.com"
+  password : ""
+  goroutine: 10
+  template: ""
+
+redis:
+  host: ""
+  port: "6379"
+
+log:
+  path: "log"
+  file: "log"

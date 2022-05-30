@@ -14,17 +14,16 @@ var (
 
 // Config 配置
 type Config struct {
-	App           app           `yaml:"app"`
-	Postgresql    postgresql    `yaml:"postgresql"`
-	Redis         redis         `yaml:"redis"`
-	Jwt           jwt           `yaml:"jwt"`
-	Log           log           `yaml:"log"`
-	Mail          mail          `yaml:"mail"`
-	Elasticsearch elasticsearch `yaml:"elasticsearch"`
-	Rabbitmq      rabbitmq      `yaml:"rabbitmq"`
+	Ws         ws         `yaml:"ws"`
+	Postgresql postgresql `yaml:"postgresql"`
+	Redis      redis      `yaml:"redis"`
+	Jwt        jwt        `yaml:"jwt"`
+	Log        log        `yaml:"log"`
+	Mail       mail       `yaml:"mail"`
+	Rabbitmq   rabbitmq   `yaml:"rabbitmq"`
 }
 
-type app struct {
+type ws struct {
 	Addr string `yaml:"addr"`
 }
 
@@ -56,10 +55,7 @@ type mail struct {
 	Username  string `yaml:"username"`
 	Password  string `yaml:"password"`
 	Goroutine int    `yaml:"goroutine"`
-}
-
-type elasticsearch struct {
-	Index string `yaml:"index"`
+	Template  string `yaml:"template"`
 }
 
 type rabbitmq struct {

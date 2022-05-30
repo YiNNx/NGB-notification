@@ -1,6 +1,6 @@
 package controller
 
-func InitHandle() {
-	go HandlePostgres()
-	go HandleRedis()
+func ListenAndSave() {
+	go savePg()
+	go saveRedis()
 }

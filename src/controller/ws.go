@@ -15,9 +15,14 @@ func ConnectWs(w http.ResponseWriter, r *http.Request) {
 	c := r.Context().Value("ws").(contextValue)["ws_connection"].(*websocket.Conn)
 	client := util.GetClient(uid, c)
 
-	offlineN := PullOfflineNotification(uid)
+	offlineN, err := PullOfflineNotification(uid)
+	if err != nil {
+		errorMessage(c, err)
+	}
 	if offlineN != nil {
-		client.WriteOfflineNotification(offlineN)
+		if err := client.WriteOfflineNotification(offlineN); err != nil {
+			errorMessage(c, err)
+		}
 	}
 
 	wait := make(chan bool)
@@ -25,18 +30,20 @@ func ConnectWs(w http.ResponseWriter, r *http.Request) {
 	<-wait
 }
 
-func PullOfflineNotification(uid int) []string {
+func errorMessage(c *websocket.Conn, err error) {
+	c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseInternalServerErr, err.Error()))
+}
+
+func PullOfflineNotification(uid int) ([]string, error) {
 	key := "notification_" + strconv.Itoa(uid)
 	offlineNotification, err := model.RedisLRange(key)
 	if err != nil {
-		log.Logger.Error(err)
-		return nil
+		return nil, err
 	}
 	if err := model.RedisDelete(key); err != nil {
-		log.Logger.Error(err)
-		return nil
+		return nil, err
 	}
-	return offlineNotification
+	return offlineNotification, nil
 }
 
 func StartWebSocket() {

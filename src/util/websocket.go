@@ -102,13 +102,14 @@ func GetClient(user int, ws *websocket.Conn) *Client {
 	return client
 }
 
-func (c *Client) WriteOfflineNotification(offlineNoti []string) {
+func (c *Client) WriteOfflineNotification(offlineNoti []string) error {
 	for i := range offlineNoti {
 		err := c.conn.WriteMessage(websocket.TextMessage, []byte(offlineNoti[i]))
 		if err != nil {
-			log.Logger.Error(err)
+			return err
 		}
 	}
+	return nil
 }
 
 func ConnectClient(user int) *Client {

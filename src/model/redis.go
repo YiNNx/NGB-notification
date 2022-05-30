@@ -49,7 +49,6 @@ func RedisPush(key string, list []string) error {
 func RedisLRange(key string) ([]string, error) {
 	list, err := redisClient.LRange(key, 0, -1).Result()
 	if err != nil {
-		log.Logger.Error(err)
 		return nil, err
 	}
 	return list, nil

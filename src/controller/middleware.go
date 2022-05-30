@@ -15,10 +15,12 @@ type contextValue map[string]interface{}
 
 func JwtMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := r.Context().Value("ws").(contextValue)["ws_connection"].(*websocket.Conn)
+
 		token := strings.Replace(r.Header["Authorization"][0], "Bearer ", "", -1)
 		claims, err := util.ParseToken(token)
 		if err != nil || claims == nil {
-			log.Logger.Error(err)
+			errorMessage(c, err)
 			return
 		}
 		data := contextValue{
